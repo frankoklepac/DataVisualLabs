@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <style>
+    .line {
+      fill: none;
+      stroke-width: 2px;
+    }
+    .axis-label {
+      font: 12px sans-serif;
+    }
+  </style>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <script>
+    d3.json("zupanije.json").then(data => {
+      const selectedData = data.filter(d => 
+        d["POLICIJSKA UPRAVA"] === "dubrovačko-neretvanska" || 
+        d["POLICIJSKA UPRAVA"] === "osječko-baranjska" || 
+        d["POLICIJSKA UPRAVA"] === "zadarska"
+      );
+
+      const datasets = [
+        {
+          name: "Dubrovačko-neretvanska",
+          values: [
+            { category: "NOVO ZAPOŠLJAVANJE", value: selectedData[0]["NOVO ZAPOŠLJAVANJE"] },
+            { category: "PRODULJENJE", value: selectedData[0]["PRODULJENJE"] },
+            { category: "SEZONSKO ZAPOŠLJAVANJE", value: selectedData[0]["SEZONSKO ZAPOŠLJAVANJE"] }
+          ]
+        },
+        {
+          name: "Osječko-baranjska",
+          values: [
+            { category: "NOVO ZAPOŠLJAVANJE", value: selectedData[1]["NOVO ZAPOŠLJAVANJE"] },
+            { category: "PRODULJENJE", value: selectedData[1]["PRODULJENJE"] },
+            { category: "SEZONSKO ZAPOŠLJAVANJE", value: selectedData[1]["SEZONSKO ZAPOŠLJAVANJE"] }
+          ]
+        },
+        {
+          name: "Zadarska",
+          values: [
+            { category: "NOVO ZAPOŠLJAVANJE", value: selectedData[2]["NOVO ZAPOŠLJAVANJE"] },
+            { category: "PRODULJENJE", value: selectedData[2]["PRODULJENJE"] },
+            { category: "SEZONSKO ZAPOŠLJAVANJE", value: selectedData[2]["SEZONSKO ZAPOŠLJAVANJE"] }
+          ]
+        }
+      ];
+
+      const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+      const width = 800 - margin.left - margin.right;
+      const height = 500 - margin.top - margin.bottom;
+
+      // Create SVG container
+      const svg = d3.select("body")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scalePoint()
+        .domain(["NOVO ZAPOŠLJAVANJE", "PRODULJENJE", "SEZONSKO ZAPOŠLJAVANJE"])
+        .range([0, width]);
+
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(datasets, dataset => d3.max(dataset.values, d => d.value))])
+        .nice()
+        .range([height, 0]);
+
+      const color = d3.scaleOrdinal()
+        .domain(datasets.map(d => d.name))
+        .range(["#1f77b4", "#ff7f0e", "#2ca02c"]);
+
+      svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+        .style("text-anchor", "middle");
+
+      svg.append("g")
+        .call(d3.axisLeft(y));
+
+      datasets.forEach(dataset => {
+        const line = d3.line()
+          .x(d => x(d.category))
+          .y(d => y(d.value));
+
+        svg.append("path")
+          .datum(dataset.values)
+          .attr("class", "line")
+          .attr("d", line)
+          .attr("stroke", color(dataset.name));
+      });
+
+      svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", height + margin.bottom - 10)
+        .attr("text-anchor", "middle")
+        .attr("class", "axis-label")
+        .text("Kategorija");
+
+      svg.append("text")
+        .attr("x", -height / 2)
+        .attr("y", -margin.left + 20)
+        .attr("text-anchor", "middle")
+        .attr("transform", "rotate(-90)")
+        .attr("class", "axis-label")
+        .text("Vrijednost");
+    }).catch(error => {
+      console.error("Error loading the JSON data:", error);
+    });
+  </script>
+</body>
+</html>
