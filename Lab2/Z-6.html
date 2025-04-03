@@ -16,7 +16,6 @@
 </head>
 <body>
   <script>
-    // Generate a dataset with dates
     const dateData = [
       { date: "2025-01-01", value: 100 },
       { date: "2025-02-01", value: 120 },
@@ -30,16 +29,13 @@
       { date: "2025-10-01", value: 300 }
     ];
 
-    // Parse the date strings into JavaScript Date objects
     const parseDate = d3.timeParse("%Y-%m-%d");
     dateData.forEach(d => d.date = parseDate(d.date));
 
-    // Set dimensions and margins
     const margin = { top: 20, right: 30, bottom: 50, left: 60 };
     const width = 800 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
-    // Create SVG container
     const svg = d3.select("body")
       .append("svg")
       .attr("width", width + margin.left + margin.right)
@@ -47,7 +43,6 @@
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Define scales
     const x = d3.scaleTime()
       .domain(d3.extent(dateData, d => d.date))
       .range([0, width]);
@@ -57,7 +52,6 @@
       .nice()
       .range([height, 0]);
 
-    // Add X-axis
     svg.append("g")
       .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x).ticks(10).tickFormat(d3.timeFormat("%b %Y")))
@@ -65,11 +59,9 @@
       .attr("transform", "rotate(-45)")
       .style("text-anchor", "end");
 
-    // Add Y-axis
     svg.append("g")
       .call(d3.axisLeft(y));
 
-    // Add the line
     const line = d3.line()
       .x(d => x(d.date))
       .y(d => y(d.value));
@@ -79,7 +71,6 @@
       .attr("class", "line")
       .attr("d", line);
 
-    // Add axis labels
     svg.append("text")
       .attr("x", width / 2)
       .attr("y", height + margin.bottom - 10)
