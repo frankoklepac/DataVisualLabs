@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<body>
+  <script>
+    var svgWidth = 500;
+    var svgHeight = 500;
+
+
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight);
+    
+    var rect = svg.append("rect")
+                    .attr("x", svgWidth-100) 
+                    .attr("y", svgHeight-100)
+                    .attr("width", 100) 
+                    .attr("height", 100) 
+                    .style("fill", "none") 
+                    .style("stroke", "blue")
+                    .style("stroke-width", 3);
+
+    rect.transition()
+      .duration(1000)
+      .attr("transform", "translate(" + -(svgWidth-100) +", 0)")
+      .on("end", function() {
+        rect.transition()
+          .duration(1000)
+          .attr("transform", "translate(" + -(svgWidth - 100) + ", " + -(svgHeight - 100) + ")");      
+      });
+
+  </script>
+</body>
+</html>
