@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<body>
+  <script>
+    var svgWidth = 500;
+    var svgHeight = 500;
+
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight);
+
+    function generateSquares() {
+      svg.selectAll("rect").remove();
+
+      for (let i = 0; i < 10; i++) {
+        let startX = Math.random() * (svgWidth - 100); 
+        let startY = Math.random() * (svgHeight - 100);
+        let duration1 = Math.random() * 5000 + 1000; 
+        let duration2 = Math.random() * 5000 + 1000; 
+
+        let square = svg.append("rect")
+                        .attr("x", startX)
+                        .attr("y", startY)
+                        .attr("width", 100)
+                        .attr("height", 100)
+                        .style("fill", "none")
+                        .style("stroke", "blue")
+                        .style("stroke-width", 3);
+
+        square.transition()
+              .delay(1000) 
+              .duration(duration1)
+              .style("fill", "yellow")
+              .on("end", function() {
+                square.transition()
+                      .duration(duration2)
+                      .attr("width", svgWidth / 2)
+                      .attr("height", svgWidth / 2)
+                      .attr("x", (svgWidth - svgWidth / 2) / 2) 
+                      .attr("y", (svgHeight - svgWidth / 2) / 2)
+                      .style("opacity", 0)
+                      .on("end", function() {
+                        if (i === 9) {
+                          generateSquares();
+                        }
+                      });
+              });
+      }
+    }
+    generateSquares();
+  </script>
+</body>
+</html>
