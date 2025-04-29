@@ -41,8 +41,8 @@
              var pos = arc.centroid(d); 
              var angle = (d.startAngle + d.endAngle) / 2 * (180 / Math.PI); 
              return "translate(" + pos + ") rotate(" + (angle - 90) + ")"; 
-           })
-           .attr("text-anchor", "middle")
+            })
+            .attr("text-anchor", "middle")
            .text(function(d) { return d.data.name; });
   </script>
 </body>
