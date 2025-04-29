@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab4-2 Tree Visualization</title>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <style>
+    .node circle {
+      fill: #fff;
+      stroke: steelblue;
+      stroke-width: 1.5px;
+    }
+    .node text {
+      font: 10px sans-serif;
+    }
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 1.5px;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    var width = 960;
+    var height = 500;
+
+    var tree = d3.layout.tree()
+        .size([height, width - 160]);
+
+    var diagonal = d3.svg.diagonal()
+        .projection(function(d) { return [d.y, d.x]; });
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+      .append("g")
+        .attr("transform", "translate(40,0)");
+
+    var treeData = {
+      name: "Root",
+      children: [
+        {
+          name: "Child 1",
+          children: [
+            { name: "Grandchild 1.1" },
+            { name: "Grandchild 1.2" }
+          ]
+        },
+        {
+          name: "Child 2",
+          children: [
+            { name: "Grandchild 2.1" },
+            {
+              name: "Grandchild 2.2",
+              children: [
+                { name: "Great-Grandchild 2.2.1" }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    var nodes = tree.nodes(treeData),
+        links = tree.links(nodes);
+
+    function update(source) {
+      var nodes = tree.nodes(treeData).reverse(),
+          links = tree.links(nodes);
+
+      nodes.forEach(function(d) { d.y = d.depth * 180; });
+
+      var node = svg.selectAll("g.node")
+          .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+      var nodeEnter = node.enter().append("g")
+          .attr("class", "node")
+          .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+          .on("click", click);
+
+      nodeEnter.append("circle")
+          .attr("r", 4.5)
+          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+      nodeEnter.append("text")
+          .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+          .attr("dy", ".35em")
+          .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+          .text(function(d) { return d.name; })
+          .style("fill-opacity", 1);
+
+      var nodeUpdate = node.transition()
+          .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+      nodeUpdate.select("circle")
+          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+      nodeUpdate.select("text")
+          .style("fill-opacity", 1);
+
+      var nodeExit = node.exit().remove();
+
+      var link = svg.selectAll("path.link")
+          .data(links, function(d) { return d.target.id; });
+
+      link.enter().insert("path", "g")
+          .attr("class", "link")
+          .attr("d", diagonal);
+
+      link.transition()
+          .attr("d", diagonal);
+
+      link.exit().remove();
+    }
+
+    function click(d) {
+      if (d.children) {
+        d._children = d.children;
+        d.children = null;
+      } else {
+        d.children = d._children;
+        d._children = null;
+      }
+      update(d);
+    }
+
+    var i = 0;
+
+    // Initial render
+    update(treeData);
+  </script>
+</body>
+</html>
