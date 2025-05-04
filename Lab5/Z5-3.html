@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+  <title>Mapa Hrvatske - Zaposlenost po Županijama</title>
+  <style>
+    body {
+      background: lightblue;
+      font-family: Arial, sans-serif;
+    }
+    .tooltip {
+      position: absolute;
+      background-color: white;
+      border: 1px solid gray;
+      padding: 5px 10px;
+      border-radius: 3px;
+      pointer-events: none;
+      font-size: 12px;
+      color: black;
+      display: none;
+      z-index: 10;
+    }
+    .county {
+      cursor: pointer;
+      stroke: white;
+      stroke-width: 1;
+    }
+    .county:hover {
+      stroke: yellow;
+      stroke-width: 2;
+    }
+    #info-panel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: white;
+      border: 1px solid gray;
+      padding: 10px;
+      border-radius: 3px;
+      font-size: 14px;
+      max-width: 200px;
+    }
+    .legend text {
+      font-size: 12px;
+      fill: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="tooltip" id="tooltip"></div>
+  <div id="info-panel">Odaberite županiju za detalje</div>
+  <script>
+    var width = 960;
+    var height = 700;
+    var countyData = [
+      { name: "Zagrebacka", employment_increase: 6.2 },
+      { name: "Krapinsko-Zagorska", employment_increase: 3.5 },
+      { name: "Sisacko-Moslavacka", employment_increase: 2.8 },
+      { name: "Karlovacka", employment_increase: 3.0 },
+      { name: "VaraÅ¾dinska", employment_increase: 4.0 },
+      { name: "KoprivniÄko-KriÅ¾evaÄka", employment_increase: 3.2 },
+      { name: "Bjelovarska-Bilogorska", employment_increase: 2.5 },
+      { name: "Primorsko-Goranska", employment_increase: 4.5 },
+      { name: "Licko-Senjska", employment_increase: 2.0 },
+      { name: "Viroviticko-Podravska", employment_increase: 2.7 },
+      { name: "Pozesko-Slavonska", employment_increase: 2.9 },
+      { name: "Brodsko-Posavska", employment_increase: 3.1 },
+      { name: "Zadarska", employment_increase: 4.2 },
+      { name: "Osjecko-Baranjska", employment_increase: 3.3 },
+      { name: "Å ibensko-Kninska", employment_increase: 3.8 },
+      { name: "Vukovarsko-Srijemska", employment_increase: 2.6 },
+      { name: "Splitsko-Dalmatinska", employment_increase: 4.8 },
+      { name: "Istarska", employment_increase: 4.4 },
+      { name: "Dubrovacko-Neretvanska", employment_increase: 4.6 },
+      { name: "Medimurska", employment_increase: 3.9 },
+      { name: "Grad Zagreb", employment_increase: 5.5 }
+    ];
+
+    var minValue = d3.min(countyData, function(d) { return d.employment_increase; });
+    var maxValue = d3.max(countyData, function(d) { return d.employment_increase; });
+    var colorScale = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range(["lightblue", "darkblue"]);
+
+    var projection = d3.geo.mercator()
+      .center([17, 44])
+      .scale(5000)
+      .translate([width / 2, height / 2]);
+
+    var path = d3.geo.path().projection(projection);
+
+    var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .style("background", "lightblue")
+      .call(d3.behavior.zoom().on("zoom", function () {
+        svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+      }));
+
+    var svgGroup = svg.append("g");
+
+    var tooltip = d3.select("#tooltip");
+    var infoPanel = d3.select("#info-panel");
+
+    var legendWidth = 200;
+    var legendHeight = 20;
+    var legend = svg.append("g")
+      .attr("class", "legend")
+      .attr("transform", "translate(20, 20)");
+
+    var legendScale = d3.scale.linear()
+      .domain([minValue, maxValue])
+      .range([0, legendWidth]);
+
+    var legendAxis = d3.svg.axis()
+      .scale(legendScale)
+      .orient("bottom")
+      .ticks(5)
+      .tickFormat(d3.format(".1f"));
+
+    var defs = svg.append("defs");
+    var linearGradient = defs.append("linearGradient")
+      .attr("id", "legend-gradient")
+      .attr("x1", "0%")
+      .attr("y1", "0%")
+      .attr("x2", "100%")
+      .attr("y2", "0%");
+
+    linearGradient.selectAll("stop")
+      .data(colorScale.range())
+      .enter()
+      .append("stop")
+      .attr("offset", function(d, i) { return i / (colorScale.range().length - 1); })
+      .attr("stop-color", function(d) { return d; });
+
+    legend.append("rect")
+      .attr("width", legendWidth)
+      .attr("height", legendHeight)
+      .style("fill", "url(#legend-gradient)");
+
+    legend.append("g")
+      .attr("transform", "translate(0, " + legendHeight + ")")
+      .call(legendAxis);
+
+    legend.append("text")
+      .attr("x", legendWidth / 2)
+      .attr("y", -5)
+      .attr("text-anchor", "middle")
+      .text("Povećanje zaposlenosti (%)");
+
+    d3.json("cro_regv3.json", function(error, cro) {
+      if (error) {
+        console.error("Error loading JSON:", error);
+        return;
+      }
+
+      var data = topojson.feature(cro, cro.objects.layer1);
+
+      data.features.forEach(function(feature) {
+        var county = countyData.find(function(d) {
+          return d.name === feature.properties.name;
+        });
+        feature.properties.employment_increase = county ? county.employment_increase : null;
+      });
+
+      svgGroup.selectAll("path.county")
+        .data(data.features)
+        .enter()
+        .append("path")
+        .attr("class", "county")
+        .attr("d", path)
+        .style("fill", function(d) {
+          return d.properties.employment_increase ? colorScale(d.properties.employment_increase) : "#ccc";
+        })
+        .on("mouseover", function(d) {
+          console.log("Hovered county:", d.properties);
+          var empIncrease = d.properties.employment_increase ? d.properties.employment_increase.toFixed(1) + "%" : "Nema podataka";
+          tooltip.style("display", "block")
+                 .html(d.properties.name + "<br>Povećanje zaposlenosti: " + empIncrease)
+                 .style("left", (d3.event.pageX + 10) + "px")
+                 .style("top", (d3.event.pageY + 10) + "px");
+          d3.select(this).style("stroke", "yellow").style("stroke-width", 2);
+        })
+        .on("mousemove", function() {
+          tooltip.style("left", (d3.event.pageX + 10) + "px")
+                 .style("top", (d3.event.pageY + 10) + "px");
+        })
+        .on("mouseout", function() {
+          tooltip.style("display", "none");
+          d3.select(this).style("stroke", "white").style("stroke-width", 1);
+        })
+        .on("click", function(d) {
+          var empIncrease = d.properties.employment_increase ? d.properties.employment_increase.toFixed(1) + "%" : "Nema podataka";
+          infoPanel.html(
+            "<strong>" + d.properties.name + "</strong><br>" +
+            "Povećanje zaposlenosti: " + empIncrease
+          );
+        });
+    });
+  </script>
+</body>
+</html>

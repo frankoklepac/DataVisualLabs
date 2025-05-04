@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+  <title>Mapa Hrvatske</title>
+  <style>
+    .tooltip {
+      position: absolute;
+      background-color: white;
+      border: 1px solid gray;
+      padding: 5px 10px;
+      border-radius: 3px;
+      pointer-events: none;
+      font-size: 12px;
+      color: black;
+      display: none;
+      z-index: 10; 
+    }
+    .county {
+      cursor: pointer;
+      fill: green;
+      stroke: white;
+      stroke-width: 1;
+    }
+    .county:hover {
+      fill: darkgreen; 
+    }
+  </style>
+</head>
+<body>
+  <div class="tooltip" id="tooltip"></div>
+  <script>
+    var width = 960;
+    var height = 700;
+  
+    var projection = d3.geo.mercator()
+      .center([17, 44])
+      .scale(5000)
+      .translate([width / 2, height / 2]);
+  
+    var path = d3.geo.path().projection(projection);
+  
+    var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .style("background", "lightblue")
+      .call(d3.behavior.zoom().on("zoom", function () {
+        svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+      }));
+  
+    var svgGroup = svg.append("g"); 
+  
+    var tooltip = d3.select("#tooltip");
+  
+    d3.json("cro_regv3.json", function(error, cro) {
+      var data = topojson.feature(cro, cro.objects.layer1);
+  
+      svgGroup.selectAll("path.county")
+        .data(data.features)
+        .enter()
+        .append("path")
+        .attr("class", "county")
+        .attr("d", path)
+        .on("mouseover", function(d) {
+          console.log("Hovered county:", d.properties);
+          tooltip.style("display", "block")
+                 .text(d.properties.name || "Unknown County")
+                 .style("left", (d3.event.pageX + 10) + "px")
+                 .style("top", (d3.event.pageY + 10) + "px");
+          d3.select(this).style("fill", "darkgreen");
+        })
+        .on("mousemove", function() {
+          tooltip.style("left", (d3.event.pageX + 10) + "px")
+                 .style("top", (d3.event.pageY + 10) + "px");
+        })
+        .on("mouseout", function() {
+          tooltip.style("display", "none");
+          d3.select(this).style("fill", "green");
+        });
+    });
+  </script>
+</body>
+</html>
